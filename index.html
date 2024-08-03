@@ -317,10 +317,10 @@
 
         // Array of points with descriptions, categories, and sizes
         const points = [
-            { coords: [52.54, 16.34], popup: "<b>Ferma świń</b><br>Miejscowość 1", category: 'Ferma Świń', size: '< 1000' },
-            { coords: [52.40, 16.90], popup: "<b>Ferma świń</b><br>Miejscowość 2", category: 'Ferma Świń', size: '1000-10000' },
-            { coords: [52.20, 17.20], popup: "<b>Ferma krów</b><br>Miejscowość 3", category: 'Ferma Krów', size: '> 10000' },
-            { coords: [52.25, 16.70], popup: "<b>Ferma kurczaków</b><br>Miejscowość 4", category: 'Ferma Kurczaków', size: '1000-10000' }
+            { coords: [52.54, 16.34], category: 'Ferma Świń', location: 'Miejscowość 1', entrepreneur: 'Przedsiębiorca A', size: '< 1000' },
+            { coords: [52.40, 16.90], category: 'Ferma Świń', location: 'Miejscowość 2', entrepreneur: 'Przedsiębiorca B', size: '1000-10000' },
+            { coords: [52.20, 17.20], category: 'Ferma Krów', location: 'Miejscowość 3', entrepreneur: 'Przedsiębiorca C', size: '> 10000' },
+            { coords: [52.25, 16.70], category: 'Ferma Kurczaków', location: 'Miejscowość 4', entrepreneur: 'Przedsiębiorca D', size: '1000-10000' }
         ];
 
         // Define colors for each farm size
@@ -344,7 +344,7 @@
             const showMedium = document.getElementById('toggle-medium').classList.contains('active');
             const showLarge = document.getElementById('toggle-large').classList.contains('active');
 
-            points.forEach(({coords, popup, category, size}) => {
+            points.forEach(({coords, category, location, entrepreneur, size}) => {
                 // Check category and size filters
                 const categoryMatch = (category === 'Ferma Świń' && showSwine) ||
                                       (category === 'Ferma Krów' && showCattle) ||
@@ -368,7 +368,12 @@
                     }).addTo(markerLayer);
 
                     // Bind a popup to the marker with a custom description
-                    marker.bindPopup(popup);
+                    marker.bindPopup(`
+                        <b>Kategoria:</b> ${category}<br>
+                        <b>Miejscowość:</b> ${location}<br>
+                        <b>Przedsiębiorca:</b> ${entrepreneur}<br>
+                        <b>Wielkość fermy:</b> ${size}
+                    `);
                 }
             });
         }
