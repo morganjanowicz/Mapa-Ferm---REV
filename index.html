@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa Ferm z Filtrowaniem</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            background-color: #fff;
+            color: #333;
+        }
+        header {
+            background: #ffd600;
+            padding: 10px 20px;
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
+            top: 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+        }
+        header img {
+            height: 50px;
+            opacity: 0.8;
+            margin-right: 20px;
+        }
+        nav {
+            display: flex;
+            justify-content: center;
+            flex-grow: 1;
+            flex-wrap: wrap;
+        }
+        nav a {
+            color: #000;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: bold;
+            transition: color 0.3s, transform 0.3s;
+            display: inline-block;
+            padding: 5px 10px;
+            text-align: center;
+        }
+        nav a:hover {
+            color: #fff;
+            transform: translateY(-2px);
+        }
+        .intro {
+            display: flex;
+            align-items: center;
+            padding: 100px 20px 20px; /* 100px top padding to account for fixed header */
+            background: #f4f4f4;
+            margin-top: 20px;
+        }
+        .intro img {
+            max-width: 200px;
+            margin-right: 20px;
+        }
+        section {
+            padding: 20px;
+            margin-top: 20px;
+        }
+        #map {
+            height: 500px;
+            width: 100%;
+        }
+        .filters {
+            padding: 10px;
+            background: #f9f9f9;
+            border-bottom: 1px solid #ccc;
+            display: flex;
+            justify-content: center; /* Center the filter buttons */
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 10px;
+        }
+        .filter-group h3 {
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        .toggle-button {
+            display: inline-block;
+            background-color: #333; /* Default color when not active */
+            color: #fff;
+            border-radius: 20px;
+            padding: 6px 15px;
+            cursor: pointer;
+            margin-bottom: 5px;
+            transition: background-color 0.3s, box-shadow 0.3s, transform 0.3s;
+            font-size: 14px;
+            text-align: center;
+        }
+        .toggle-button.active {
+            background-color: #ffd600; /* Yellow when active */
+            color: #000;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+        .toggle-button:hover {
+            transform: translateY(-2px);
+        }
+        .legend {
+            background: #fff;
+            padding: 10px;
+            margin: 10px;
+            line-height: 1.5em;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        }
+        .legend i {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            opacity: 0.7;
+        }
+        .legend img {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+        form {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        form input, form textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        form button {
+            padding: 10px 15px;
+            background: #000;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        form button:hover {
+            background-color: #333;
+        }
+        .contact-email {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #000;
+            font-size: 16px;
+        }
+        footer {
+            background: #ffd600;
+            padding: 10px;
+            text-align: center;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+        footer a {
+            color: #000;
+            font-size: 20px;
+            transition: color 0.3s, transform 0.3s;
+        }
+        footer a:hover {
+            color: #fff;
+            transform: translateY(-2px);
+        }
+        /* Responsive Styles */
+        @media (max-width: 768px) {
+            header {
+                flex-direction: row; /* Keep logo on the left and nav on the right */
+                justify-content: space-between; /* Ensure space between logo and nav */
+            }
+            nav {
+                margin-top: 0;
+                justify-content: center;
+            }
+            .intro {
+                flex-direction: column;
+            }
+            .intro img {
+                margin-bottom: 20px;
+            }
+            form {
+                padding: 20px 10px;
+            }
+            .contact-email {
+                position: static;
+                margin-bottom: 10px;
+                text-align: center;
+            }
+        }
+        @media (max-width: 480px) {
+            nav a {
+                margin: 5px;
+                padding: 5px;
+                font-size: 14px;
+            }
+            .toggle-button {
+                padding: 5px 10px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="https://raw.githubusercontent.com/morganjanowicz/Mapa-Ferm---REV/main/Logo%20-%20Mapa%20ferm%20-%20ikony%20-%20Wolni%20of%20Ferm%20(transparent).svg" alt="Logo">
+        <nav>
+            <a href="#about">O projekcie</a>
+            <a href="#map-section">Mapa</a>
+            <a href="#contact">Zgłoś fermę</a>
+        </nav>
+    </header>
+
+    <section id="about" class="intro">
+        <img src="https://via.placeholder.com/200" alt="Zdjęcie wprowadzenia">
+        <p>Witamy na naszej mapie ferm. Na tej stronie znajdziesz informacje o lokalizacjach różnych ferm w Polsce. Korzystaj z mapy poniżej, aby zobaczyć szczegóły.</p>
+    </section>
+
+    <section id="map-section">
+        <div class="filters">
+            <div class="filter-group">
+                <h3>Kategorie</h3>
+                <div class="toggle-button active" id="toggle-swine" data-filter="swine">Fermy świń</div>
+                <div class="toggle-button active" id="toggle-cattle" data-filter="cattle">Fermy krów</div>
+                <div class="toggle-button active" id="toggle-chicken" data-filter="chicken">Fermy kurczaków</div>
+            </div>
+            <div class="filter-group">
+                <h3>Wielkość</h3>
+                <div class="toggle-button active" id="toggle-small" data-filter="small">Wielkość &lt; 1000</div>
+                <div class="toggle-button active" id="toggle-medium" data-filter="medium">Wielkość 1000-10000</div>
+                <div class="toggle-button active" id="toggle-large" data-filter="large">Wielkość &gt; 10000</div>
+            </div>
+        </div>
+        <div id="map"></div>
+    </section>
+
+    <section id="contact">
+        <form>
+            <h2>Formularz zgłoszeniowy</h2>
+            <div class="contact-email">Kontakt: <a href="mailto:kontakt@greenrev.org">kontakt@greenrev.org</a></div>
+            <input type="text" name="name" placeholder="Imię i nazwisko" required>
+            <input type="email" name="email" placeholder="Adres email" required>
+            <input type="text" name="location" placeholder="Wskaż lokalizację fermy" required>
+            <textarea name="message" placeholder="Wiadomość" required></textarea>
+            <button type="submit">Wyślij</button>
+        </form>
+    </section>
+
+    <footer>
+        <a href="https://www.facebook.com" target="_blank" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+        <a href="https://twitter.com" target="_blank" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+        <a href="https://www.instagram.com" target="_blank" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+        <a href="https://www.linkedin.com" target="_blank" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+    </footer>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- Font Awesome for Icons -->
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script>
+        // Initialize the map and set its view to a specified geographical location and zoom level
+        const map = L.map('map', {
+            center: [52.0, 19.0], // Center of Poland
+            zoom: 6, // Initial zoom level
+        });
+
+        // Add a tile layer to the map (OpenStreetMap tiles)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Define custom icons for each farm type
+        const icons = {
+            'Ferma Świń': L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/morganjanowicz/Mapa-Ferm---REV/main/Mapa%20ferm%20-%20ikony%20-%C5%9Bwinia%20(transparent).svg',
+                iconSize: [20, 20],
+                iconAnchor: [10, 10],
+                popupAnchor: [0, -20]
+            }),
+            'Ferma Krów': L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/morganjanowicz/Mapa-Ferm---REV/main/Mapa%20ferm%20-%20ikony%20-%20krowa%20(transparent).svg',
+                iconSize: [20, 20],
+                iconAnchor: [10, 10],
+                popupAnchor: [0, -20]
+            }),
+            'Ferma Kurczaków': L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/morganjanowicz/Mapa-Ferm---REV/main/Mapa%20ferm%20-%20ikony%20-%20kurczak%20(transparent).svg',
+                iconSize: [20, 20],
+                iconAnchor: [10, 10],
+                popupAnchor: [0, -20]
+            })
+        };
+
+        // Array of points with descriptions, categories, and sizes
+        const points = [
+            { coords: [52.54, 16.34], popup: "<b>Ferma świń</b><br>Miejscowość 1", category: 'Ferma Świń', size: '< 1000' },
+            { coords: [52.40, 16.90], popup: "<b>Ferma świń</b><br>Miejscowość 2", category: 'Ferma Świń', size: '1000-10000' },
+            { coords: [52.20, 17.20], popup: "<b>Ferma krów</b><br>Miejscowość 3", category: 'Ferma Krów', size: '> 10000' },
+            { coords: [52.25, 16.70], popup: "<b>Ferma kurczaków</b><br>Miejscowość 4", category: 'Ferma Kurczaków', size: '1000-10000' }
+        ];
+
+        // Define colors for each farm size
+        const sizeColors = {
+            '< 1000': '#FFDDC1', // Light Orange
+            '1000-10000': '#FFBB91', // Orange
+            '> 10000': '#FF8A5B'  // Dark Orange
+        };
+
+        // Create a layer group to hold all markers
+        const markerLayer = L.layerGroup().addTo(map);
+
+        // Function to add markers and circles
+        function updateMarkers() {
+            markerLayer.clearLayers(); // Clear existing markers
+
+            const showSwine = document.getElementById('toggle-swine').classList.contains('active');
+            const showCattle = document.getElementById('toggle-cattle').classList.contains('active');
+            const showChicken = document.getElementById('toggle-chicken').classList.contains('active');
+            const showSmall = document.getElementById('toggle-small').classList.contains('active');
+            const showMedium = document.getElementById('toggle-medium').classList.contains('active');
+            const showLarge = document.getElementById('toggle-large').classList.contains('active');
+
+            points.forEach(({coords, popup, category, size}) => {
+                // Check category and size filters
+                const categoryMatch = (category === 'Ferma Świń' && showSwine) ||
+                                      (category === 'Ferma Krów' && showCattle) ||
+                                      (category === 'Ferma Kurczaków' && showChicken);
+                const sizeMatch = (size === '< 1000' && showSmall) ||
+                                  (size === '1000-10000' && showMedium) ||
+                                  (size === '> 10000' && showLarge);
+
+                if (categoryMatch && sizeMatch) {
+                    // Add a circle with a radius of 1.5 km around the marker
+                    const circle = L.circle(coords, {
+                        color: sizeColors[size], // Circle border color based on size
+                        fillColor: sizeColors[size], // Circle fill color based on size
+                        fillOpacity: 0.2,     // Circle fill opacity
+                        radius: 1500          // Radius in meters
+                    }).addTo(markerLayer);
+
+                    // Add a marker with the appropriate custom icon
+                    const marker = L.marker(coords, {
+                        icon: icons[category] // Use the custom icon for the farm type
+                    }).addTo(markerLayer);
+
+                    // Bind a popup to the marker with a custom description
+                    marker.bindPopup(popup);
+                }
+            });
+        }
+
+        // Add a legend to the map
+        const legend = L.control({ position: 'bottomright' });
+
+        legend.onAdd = function () {
+            const div = L.DomUtil.create('div', 'legend');
+            div.innerHTML += "<strong>Kategorie:</strong><br>";
+            Object.keys(icons).forEach(category => {
+                div.innerHTML += `<i><img src="${icons[category].options.iconUrl}" style="width: 20px; height: 20px;" /></i> ${category}<br>`;
+            });
+            div.innerHTML += "<strong>Wielkość Fermy:</strong><br>";
+            Object.keys(sizeColors).forEach(size => {
+                div.innerHTML += `<i style="background: ${sizeColors[size]}"></i> ${size}<br>`;
+            });
+            return div;
+        };
+
+        legend.addTo(map);
+
+        // Update markers on filter change
+        document.querySelectorAll('.toggle-button').forEach(button => {
+            button.addEventListener('click', function() {
+                this.classList.toggle('active');
+                updateMarkers();
+            });
+        });
+
+        // Initial marker setup
+        updateMarkers();
+    </script>
+</body>
+</html>
